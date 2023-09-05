@@ -18,26 +18,28 @@ pub struct Edge(i32);
 
 pub type AIGraph = Graph<&'static str, Edge, State>;
 
-pub fn running_example() -> AIGraph {
-    let mut g = Graph::new();
+impl AIGraph {
+    pub fn running_example() -> AIGraph {
+        let mut g = Graph::new();
 
-    g.push_vertex("A", State::Start);
-    g.push_vertex("E", State::Goal);
+        g.push_vertex("A", State::Start);
+        g.push_vertex("E", State::Goal);
 
-    g.push_undirected_edge("A", "B", Edge(5));
-    g.push_undirected_edge("A", "F", Edge(6));
+        g.push_undirected_edge("A", "B", Edge(5));
+        g.push_undirected_edge("A", "F", Edge(6));
 
-    g.push_undirected_edge("B", "D", Edge(3));
-    g.push_undirected_edge("B", "C", Edge(7));
+        g.push_undirected_edge("B", "D", Edge(3));
+        g.push_undirected_edge("B", "C", Edge(7));
 
-    g.push_undirected_edge("D", "F", Edge(3));
-    g.push_undirected_edge("D", "G", Edge(4));
+        g.push_undirected_edge("D", "F", Edge(3));
+        g.push_undirected_edge("D", "G", Edge(4));
 
-    g.push_undirected_edge("F", "G", Edge(5));
+        g.push_undirected_edge("F", "G", Edge(5));
 
-    g.push_undirected_edge("G", "E", Edge(3));
+        g.push_undirected_edge("G", "E", Edge(3));
 
-    g
+        g
+    }
 }
 
 #[cfg(test)]
@@ -46,7 +48,7 @@ mod tests {
 
     #[test]
     fn check_graph() {
-        let g = running_example();
+        let g = AIGraph::running_example();
 
         assert_eq!(g.expand("A"), ["B", "F"]);
         assert_eq!(g.expand("B"), ["A", "D", "C"]);
@@ -58,7 +60,7 @@ mod tests {
 
     #[test]
     fn check_vertices() {
-        let g = running_example();
+        let g = AIGraph::running_example();
 
         assert!(matches!(g.get_vertex("A").unwrap(), State::Start));
         assert!(matches!(g.get_vertex("E").unwrap(), State::Goal));
