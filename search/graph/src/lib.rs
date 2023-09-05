@@ -12,6 +12,7 @@ impl<VId, E, V> Graph<VId, E, V>
 where
     VId: Eq + Hash + Clone,
     V: Hash,
+    E: Clone,
 {
     pub fn new() -> Self {
         Graph {
@@ -29,6 +30,11 @@ where
         adjacency_to_from.push((to, edge));
     }
 
+    pub fn push_undirected_edge(&mut self, from: VId, to: VId, edge: E) {
+        self.push_edge(from.clone(), to.clone(), edge.clone());
+        self.push_edge(to, from, edge);
+    }
+
     pub fn expand(&self, vid: VId) -> Vec<VId> {
         if let Some(vertex) = self.adjacency.get(&vid) {
             vertex.iter().map(|(v, _)| (*v).clone()).collect()
@@ -42,6 +48,7 @@ impl<VId, E, V> Default for Graph<VId, E, V>
 where
     VId: Eq + Hash + Clone,
     V: Hash,
+    E: Clone,
 {
     fn default() -> Self {
         Self::new()
@@ -89,5 +96,14 @@ mod tests {
 
         assert_eq!(g.expand("A"), ["B", "F"]);
         assert_eq!(g.expand("B"), Vec::<&str>::default());
+    }
+
+    #[test]
+    fn create_vs_when_undirected_edge_is_pushed() {
+        let mut g: Graph<&str, ()> = Graph::new();
+
+        g.push_undirected_edge("A", "B", ());
+        assert_eq!(g.expand("A"), ["B"]);
+        assert_eq!(g.expand("B"), ["A"]);
     }
 }
