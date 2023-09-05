@@ -16,7 +16,9 @@ impl Default for State {
 #[derive(Clone)]
 pub struct Edge(i32);
 
-pub fn running_example() -> Graph<&'static str, Edge, State> {
+pub type AIGraph = Graph<&'static str, Edge, State>;
+
+pub fn running_example() -> AIGraph {
     let mut g = Graph::new();
 
     g.push_vertex("A", State::Start);
