@@ -1,11 +1,11 @@
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 use std::hash::Hash;
 
 pub mod running_example;
 
 pub struct Graph<VId, E = (), V = ()> {
-    vertices: HashMap<VId, V>,
-    adjacency: HashMap<VId, Vec<(VId, E)>>,
+    vertices: FnvHashMap<VId, V>,
+    adjacency: FnvHashMap<VId, Vec<(VId, E)>>,
 }
 
 impl<VId, E, V> Graph<VId, E, V>
@@ -16,8 +16,8 @@ where
 {
     pub fn new() -> Self {
         Graph {
-            vertices: HashMap::new(),
-            adjacency: HashMap::new(),
+            vertices: FnvHashMap::default(),
+            adjacency: FnvHashMap::default(),
         }
     }
 
