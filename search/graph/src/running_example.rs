@@ -1,6 +1,6 @@
 use crate::Graph;
 
-#[derive(Hash)]
+#[derive(Hash, PartialEq, Eq)]
 pub enum State {
     Start,
     Neutral,
@@ -19,6 +19,14 @@ pub struct Edge(i32);
 pub type AIGraph = Graph<&'static str, Edge, State>;
 
 impl AIGraph {
+    pub fn get_start_node(&self) -> Option<&'static str> {
+        if let Some((vid, _)) = self.vertices.iter().find(|(_, v)| **v == State::Start) {
+            return Some(*vid);
+        }
+
+        None
+    }
+
     pub fn running_example() -> AIGraph {
         let mut g = Graph::new();
 
@@ -65,5 +73,11 @@ mod tests {
         assert!(matches!(g.get_vertex("A").unwrap(), State::Start));
         assert!(matches!(g.get_vertex("E").unwrap(), State::Goal));
         assert!(matches!(g.get_vertex("D").unwrap(), State::Neutral));
+    }
+
+    #[test]
+    fn get_start_node() {
+        let g = AIGraph::running_example();
+        assert_eq!(g.get_start_node(), Some("A"));
     }
 }
