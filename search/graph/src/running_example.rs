@@ -40,7 +40,7 @@ pub fn running_example() -> Graph<&'static str, Edge, State> {
 
 #[cfg(test)]
 mod tests {
-    use super::running_example;
+    use super::*;
 
     #[test]
     fn check_graph() {
@@ -52,5 +52,14 @@ mod tests {
         assert_eq!(g.expand("D"), ["B", "F", "G"]);
         assert_eq!(g.expand("E"), ["G"]);
         assert_eq!(g.expand("F"), ["A", "D", "G"]);
+    }
+
+    #[test]
+    fn check_vertices() {
+        let g = running_example();
+
+        assert!(matches!(g.get_vertex("A").unwrap(), State::Start));
+        assert!(matches!(g.get_vertex("E").unwrap(), State::Goal));
+        assert!(matches!(g.get_vertex("D").unwrap(), State::Neutral));
     }
 }
