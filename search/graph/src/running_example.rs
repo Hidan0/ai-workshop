@@ -16,15 +16,20 @@ impl Default for State {
 #[derive(Clone)]
 pub struct Edge(i32);
 
-pub type AIGraph = Graph<&'static str, Edge, State>;
+pub type AIGraphVId = &'static str;
+pub type AIGraph = Graph<AIGraphVId, Edge, State>;
 
 impl AIGraph {
-    pub fn get_start_node(&self) -> Option<&'static str> {
+    pub fn get_start_node(&self) -> Option<AIGraphVId> {
         if let Some((vid, _)) = self.vertices.iter().find(|(_, v)| **v == State::Start) {
             return Some(*vid);
         }
 
         None
+    }
+
+    pub fn is_goal(&self, vid: AIGraphVId) -> bool {
+        self.vertices.get(vid) == Some(&State::Goal)
     }
 
     pub fn running_example() -> AIGraph {
