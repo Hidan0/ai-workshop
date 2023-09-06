@@ -86,6 +86,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn check_dfs_no_start() {
+        let g = AIGraph::new();
+        assert_eq!(dfs(&g).unwrap_err().to_string(), "No start node found")
+    }
+
+    #[test]
+    fn check_dfs_only_start() {
+        let mut g = AIGraph::new();
+        g.push_vertex("A", graph::running_example::State::Start);
+        assert_eq!(dfs(&g).unwrap_err().to_string(), "No path found")
+    }
+
+    #[test]
     fn check_dfs() {
         let g = AIGraph::running_example();
         assert_eq!(dfs(&g).unwrap().join(", "), "A, B, D, G, E")
