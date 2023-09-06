@@ -30,7 +30,7 @@ La *ricerca* è un metodo formale per costruire una *sequenza di azioni* (piano)
 
 ## Spazio degli stati
 
-- $ S = \{s_1, s_2, \dots\}$ insieme o **spazio degli stati**, assumiamo uno spazio degli stati finito
+- $S = \{s_1, s_2, \dots\}$ insieme o **spazio degli stati**, assumiamo uno spazio degli stati finito
 
 - $s_I \in S$ è lo stato **iniziale**, descrive la situazione di partenza in cui si trovano *agente* e *ambiente*
 - $s_G \in S$ è lo stato di **goal**, descrive la situazione in cui l'*agente* vuole trovarsi
