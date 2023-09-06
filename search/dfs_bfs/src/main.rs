@@ -30,7 +30,7 @@ fn main() {
     }
 }
 
-/// Performs a Depth-First Search (BFS) with backtracking and pruning on the graph.
+/// Performs a Depth-First Search (DFS) with backtracking and pruning on the graph.
 ///
 /// # Errors
 ///
