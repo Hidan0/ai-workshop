@@ -5,6 +5,7 @@ use graph::running_example::AIGraphVId;
 use log::debug;
 use log::info;
 use log::warn;
+use std::collections::HashSet;
 use std::collections::VecDeque;
 
 fn main() {
@@ -18,7 +19,7 @@ fn main() {
 }
 
 fn dfs(graph: &AIGraph) -> Result<Vec<AIGraphVId>> {
-    let mut eql = Vec::<AIGraphVId>::new(); // EQL
+    let mut eql = HashSet::<AIGraphVId>::new(); // EQL
     let mut frontier = VecDeque::<AIGraphVId>::new();
 
     let mut path = Vec::<AIGraphVId>::new();
@@ -39,7 +40,7 @@ fn dfs(graph: &AIGraph) -> Result<Vec<AIGraphVId>> {
     info!("Initializing the frontier with {}.", start_node);
     frontier.push_back(start_node);
 
-    eql.push(start_node);
+    eql.insert(start_node);
 
     while let Some(node) = frontier.pop_front() {
         path.push(node);
@@ -68,10 +69,10 @@ fn dfs(graph: &AIGraph) -> Result<Vec<AIGraphVId>> {
             continue;
         }
 
-        expanded_nodes.sort_by(|a, b| b.cmp(a));
-        for e_node in expanded_nodes {
+        expanded_nodes.sort();
+        while let Some(e_node) = expanded_nodes.pop() {
             info!("Adding {} to EQL and frontier.", e_node);
-            eql.push(e_node);
+            eql.insert(e_node);
             frontier.push_front(e_node);
         }
 
