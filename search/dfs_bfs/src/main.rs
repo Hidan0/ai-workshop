@@ -1,7 +1,7 @@
 use anyhow::bail;
 use anyhow::Result;
-use graph::running_example::AIGraph;
-use graph::running_example::AIGraphVId;
+use graph::ai::AIGraph;
+use graph::ai::AIGraphVId;
 use log::debug;
 use log::info;
 use log::warn;
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn check_dfs_only_start() {
         let mut g = AIGraph::new();
-        g.push_vertex("A", graph::running_example::State::Start);
+        g.push_vertex("A", graph::ai::State::Start);
         assert_eq!(dfs(&g).unwrap_err().to_string(), "No path found")
     }
 

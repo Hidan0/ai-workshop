@@ -1,7 +1,7 @@
 use fnv::FnvHashMap;
 use std::hash::Hash;
 
-pub mod running_example;
+pub mod ai;
 
 pub struct Graph<VId, E = (), V = ()> {
     vertices: FnvHashMap<VId, V>,

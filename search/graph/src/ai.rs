@@ -19,6 +19,12 @@ pub struct Edge(i32);
 pub type AIGraphVId = &'static str;
 pub type AIGraph = Graph<AIGraphVId, Edge, State>;
 
+pub trait Frontier {
+    fn is_empty(&self) -> bool;
+    fn pop(&mut self) -> Option<AIGraphVId>;
+    fn push(&mut self, node: AIGraphVId);
+}
+
 impl AIGraph {
     pub fn get_start_node(&self) -> Option<AIGraphVId> {
         if let Some((vid, _)) = self.vertices.iter().find(|(_, v)| **v == State::Start) {
