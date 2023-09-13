@@ -153,8 +153,6 @@ graph TD;
 }
 
 fn main() {
-    env_logger::init();
-
     let g = AIGraph::running_example();
 
     let mut dfs_solver = Solver::new(&g, Algorithm::Dfs);
