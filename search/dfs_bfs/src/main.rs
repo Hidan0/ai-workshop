@@ -1,7 +1,6 @@
 use anyhow::{bail, Result};
 use fnv::FnvHashMap;
 use graph::ai::{AIGraph, AIGraphVId, Frontier};
-use log::{debug, info, warn};
 use std::collections::{HashSet, VecDeque};
 
 #[derive(Default, Debug)]
@@ -42,243 +41,172 @@ impl Frontier for BfsFrontier {
     }
 }
 
+pub enum Algorithm {
+    Dfs,
+    Bfs,
+}
+
+pub struct Solver<'a> {
+    graph: &'a AIGraph,
+    eql: HashSet<AIGraphVId>,
+    frontier: Box<dyn Frontier>,
+    search_tree: FnvHashMap<AIGraphVId, AIGraphVId>,
+}
+
+impl<'a> Solver<'a> {
+    pub fn new(graph: &'a AIGraph, algorithm: Algorithm) -> Self {
+        let frontier: Box<dyn Frontier> = match algorithm {
+            Algorithm::Dfs => Box::<DfsFrontier>::default(),
+            Algorithm::Bfs => Box::<BfsFrontier>::default(),
+        };
+
+        Self {
+            graph,
+            eql: HashSet::new(),
+            frontier,
+            search_tree: FnvHashMap::default(),
+        }
+    }
+
+    fn build_path(&self, from: AIGraphVId) -> String {
+        let mut path: Vec<AIGraphVId> = vec![];
+
+        path.push(from);
+        let mut current = from;
+
+        while let Some(next) = self.search_tree.get(&current) {
+            path.push(*next);
+            current = *next
+        }
+
+        path.reverse();
+        path.join(" -> ")
+    }
+
+    pub fn build_mermaid_graph(&self) -> String {
+        let mut id = 0;
+        let mut mermaid_id = FnvHashMap::<AIGraphVId, usize>::default();
+
+        let mut graph = String::new();
+
+        for (node, parent) in &self.search_tree {
+            if let Some(parent_id) = mermaid_id.get(parent) {
+                graph.push_str(format!("    {} --> ", *parent_id).as_str());
+            } else {
+                id += 1;
+                mermaid_id.insert(parent, id);
+                graph.push_str(format!("    {}(({})) --> ", id, parent).as_str());
+            }
+
+            if let Some(node_id) = mermaid_id.get(node) {
+                graph.push_str(format!("{};\n", *node_id).as_str());
+            } else {
+                id += 1;
+                mermaid_id.insert(node, id);
+                graph.push_str(format!("{}(({}));\n", id, node).as_str());
+            }
+        }
+
+        format!(
+            r#"
+graph TD;
+{}
+"#,
+            graph
+        )
+    }
+
+    pub fn solve(&mut self) -> Result<String> {
+        let start_node = match self.graph.get_start_node() {
+            Some(node) => node,
+            None => {
+                bail!("No start node found");
+            }
+        };
+
+        self.frontier.push(start_node);
+        self.eql.insert(start_node);
+
+        while let Some(node) = self.frontier.pop() {
+            if self.graph.is_goal(node) {
+                return Ok(self.build_path(node));
+            }
+
+            let mut expanded_nodes = self.graph.expand(node);
+            expanded_nodes.retain(|node| !self.eql.contains(node));
+
+            if expanded_nodes.is_empty() {
+                continue;
+            }
+
+            expanded_nodes.sort();
+            while let Some(e_node) = expanded_nodes.pop() {
+                self.eql.insert(e_node);
+
+                self.search_tree.insert(e_node, node);
+
+                self.frontier.push(e_node);
+            }
+        }
+        bail!("No goal found")
+    }
+}
+
 fn main() {
     env_logger::init();
 
     let g = AIGraph::running_example();
 
-    match dfs(&g) {
-        Ok(goal_node) => println!(
-            "[DFS] A path to the goal has been found! The goal node is {}.",
-            goal_node
-        ),
+    let mut dfs_solver = Solver::new(&g, Algorithm::Dfs);
+    let mut bfs_solver = Solver::new(&g, Algorithm::Bfs);
+
+    match dfs_solver.solve() {
+        Ok(solution) => println!("[DFS] A path to the goal has been found! {}.", solution),
         Err(e) => println!("Error: {}", e),
     }
-
-    match bfs(&g) {
-        Ok(goal_node) => println!(
-            "[BFS] A path to the goal has been found! The goal node is {}.",
-            goal_node
-        ),
+    match bfs_solver.solve() {
+        Ok(solution) => println!("[BFS] A path to the goal has been found! {}.", solution),
         Err(e) => println!("Error: {}", e),
     }
-}
-
-fn build_path(tree: &FnvHashMap<AIGraphVId, AIGraphVId>, from: AIGraphVId) -> String {
-    let mut path: Vec<AIGraphVId> = vec![];
-
-    path.push(from);
-    let mut current = from;
-
-    while let Some(next) = tree.get(&current) {
-        path.push(*next);
-        current = *next
-    }
-
-    path.join(" -> ")
-}
-
-fn build_mermaid_graph(tree: &FnvHashMap<AIGraphVId, AIGraphVId>) -> String {
-    let mut id = 0;
-    let mut mermaid_id = FnvHashMap::<AIGraphVId, usize>::default();
-
-    let mut graph = String::new();
-
-    for (node, parent) in tree {
-        if let Some(parent_id) = mermaid_id.get(parent) {
-            graph.push_str(format!("{} --> ", *parent_id).as_str());
-        } else {
-            id += 1;
-            mermaid_id.insert(*parent, id);
-            graph.push_str(format!("{}(({})) --> ", id, parent).as_str());
-        }
-
-        if let Some(node_id) = mermaid_id.get(node) {
-            graph.push_str(format!("{};", *node_id).as_str());
-        } else {
-            id += 1;
-            mermaid_id.insert(*node, id);
-            graph.push_str(format!("{}(({}));", id, node).as_str());
-        }
-    }
-
-    format!(
-        r#"
-    graph TD;
-        {}
-    "#,
-        graph
-    )
-}
-
-/// Performs a Depth-First Search (DFS) with backtracking and pruning on the graph.
-///
-/// # Errors
-///
-/// Returns an error if either no initial node is found or no path is found.
-fn dfs(graph: &AIGraph) -> Result<AIGraphVId> {
-    let mut eql = HashSet::<AIGraphVId>::new(); // EQL
-    let mut frontier = DfsFrontier::default();
-    let mut child_of = FnvHashMap::<AIGraphVId, AIGraphVId>::default();
-
-    info!("Starting DFS...");
-
-    let start_node = match graph.get_start_node() {
-        Some(node) => {
-            info!("{} is the staring node.", node);
-            node
-        }
-        None => {
-            warn!("No start node found.");
-            bail!("No start node found");
-        }
-    };
-
-    info!("Initializing the frontier with {}.", start_node);
-    frontier.push(start_node);
-
-    eql.insert(start_node);
-
-    while let Some(node) = frontier.pop() {
-        info!("Checking if {} is the goal.", node);
-        if graph.is_goal(node) {
-            info!("{} is the goal!", node);
-
-            debug!("Final EQl is now {:?}", eql);
-            debug!("Final Frontier is now {:?}", frontier);
-
-            println!("{}", build_path(&child_of, node));
-            println!("{}", build_mermaid_graph(&child_of));
-
-            return Ok(node);
-        }
-
-        info!("Expanding {}.", node);
-        let mut expanded_nodes = graph.expand(node);
-
-        debug!("Expanded nodes are {:?}.", expanded_nodes);
-        info!("Checking if any of the expanded nodes are in the EQL.");
-        expanded_nodes.retain(|node| !eql.contains(node));
-        debug!("Expanded nodes after pruning are {:?}.", expanded_nodes);
-
-        if expanded_nodes.is_empty() {
-            info!("No new nodes found from {}. Backtracking.", node);
-            continue;
-        }
-
-        expanded_nodes.sort();
-        while let Some(e_node) = expanded_nodes.pop() {
-            info!("Adding {} to EQL and frontier.", e_node);
-            eql.insert(e_node);
-
-            child_of.insert(e_node, node);
-
-            frontier.push(e_node);
-        }
-
-        debug!("EQl is now {:?}", eql);
-        debug!("Frontier is now {:?}", frontier);
-    }
-    bail!("No path found")
-}
-
-/// Performs a Breadth-First Search (BFS) with backtracking and pruning on the graph.
-///
-/// # Errors
-///
-/// Returns an error if either no initial node is found or no path is found.
-fn bfs(graph: &AIGraph) -> Result<AIGraphVId> {
-    let mut eql = HashSet::<AIGraphVId>::new(); // EQL
-    let mut frontier = BfsFrontier::default();
-    let mut child_of = FnvHashMap::<AIGraphVId, AIGraphVId>::default();
-
-    info!("Starting BFS...");
-
-    let start_node = match graph.get_start_node() {
-        Some(node) => {
-            info!("{} is the staring node.", node);
-            node
-        }
-        None => {
-            warn!("No start node found.");
-            bail!("No start node found");
-        }
-    };
-
-    info!("Initializing the frontier with {}.", start_node);
-    frontier.push(start_node);
-
-    eql.insert(start_node);
-
-    while let Some(node) = frontier.pop() {
-        info!("Checking if {} is the goal.", node);
-        if graph.is_goal(node) {
-            info!("{} is the goal!", node);
-
-            debug!("Final EQl is now {:?}", eql);
-            debug!("Final Frontier is now {:?}", frontier);
-
-            println!("{}", build_path(&child_of, node));
-            println!("{}", build_mermaid_graph(&child_of));
-
-            return Ok(node);
-        }
-
-        info!("Expanding {}.", node);
-        let mut expanded_nodes = graph.expand(node);
-
-        debug!("Expanded nodes are {:?}.", expanded_nodes);
-        info!("Checking if any of the expanded nodes are in the EQL.");
-        expanded_nodes.retain(|node| !eql.contains(node));
-        debug!("Expanded nodes after pruning are {:?}.", expanded_nodes);
-
-        if expanded_nodes.is_empty() {
-            info!("No new nodes found from {}. Backtracking.", node);
-            continue;
-        }
-
-        expanded_nodes.sort();
-        for e_node in expanded_nodes {
-            info!("Adding {} to EQL and frontier.", e_node);
-            eql.insert(e_node);
-
-            child_of.insert(e_node, node);
-
-            frontier.push(e_node);
-        }
-
-        debug!("EQl is now {:?}", eql);
-        debug!("Frontier is now {:?}", frontier);
-    }
-    bail!("No path found")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use graph::ai::State;
 
     #[test]
-    fn check_dfs_no_start() {
+    fn check_no_start() {
         let g = AIGraph::new();
-        assert_eq!(dfs(&g).unwrap_err().to_string(), "No start node found")
+        let mut solver = Solver::new(&g, Algorithm::Dfs);
+        assert_eq!(
+            solver.solve().unwrap_err().to_string(),
+            "No start node found"
+        )
     }
 
     #[test]
-    fn check_dfs_only_start() {
+    fn check_only_start() {
         let mut g = AIGraph::new();
-        g.push_vertex("A", graph::ai::State::Start);
-        assert_eq!(dfs(&g).unwrap_err().to_string(), "No path found")
+        g.push_vertex("A", State::Start);
+
+        let mut solver = Solver::new(&g, Algorithm::Dfs);
+        assert_eq!(solver.solve().unwrap_err().to_string(), "No goal found")
     }
 
     #[test]
     fn check_dfs() {
         let g = AIGraph::running_example();
-        assert_eq!(dfs(&g).unwrap(), "E")
+        let mut solver = Solver::new(&g, Algorithm::Dfs);
+
+        assert_eq!(solver.solve().unwrap(), "A -> B -> D -> G -> E");
     }
 
     #[test]
     fn check_bfs() {
         let g = AIGraph::running_example();
-        assert_eq!(bfs(&g).unwrap(), "E")
+        let mut solver = Solver::new(&g, Algorithm::Bfs);
+
+        assert_eq!(solver.solve().unwrap(), "A -> F -> G -> E");
     }
 }
