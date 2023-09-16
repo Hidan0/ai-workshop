@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
-use fnv::FnvHashMap;
+use fnv::{FnvHashMap, FnvHashSet};
 use graph::ai::{AIGraph, AIGraphVId, Solution};
-use std::collections::{HashSet, VecDeque};
+use std::collections::VecDeque;
 
 #[derive(Default, Debug)]
 struct DfsFrontier {
@@ -109,7 +109,7 @@ graph TD;
 
 pub struct Solver<'a> {
     graph: &'a AIGraph,
-    eql: HashSet<AIGraphVId>,
+    eql: FnvHashSet<AIGraphVId>,
     frontier: Box<dyn Frontier>,
     search_tree: SearchTree,
 }
@@ -123,7 +123,7 @@ impl<'a> Solver<'a> {
 
         Self {
             graph,
-            eql: HashSet::new(),
+            eql: FnvHashSet::default(),
             frontier,
             search_tree: SearchTree::default(),
         }
