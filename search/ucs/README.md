@@ -67,3 +67,68 @@ graph TD;
 - I costi sono tutti positivi quindi $g(p^*_1) < g(p^*_1)+\Delta_{p^*_2} < g(p)$
 
 - Questo implica che $g(X) < g(V)$, che **viola l'ipotesi 1** (valida per costruzione)
+
+### UCS con EXpanded List
+
+Dato che ogni volta che selezioniamo per la prima volta un nodo scopriamo il percorso ottimo, non c'è motivo di selezionare lo stesso nodo una seconda volta, introduciamo la **lista dei nodi espansi**: **EXL**.
+
+Ogni volta che selezioniamo un nodo per l'espansione:
+
+- Se il nodo è già presente in **EXL**, lo scartiamo
+
+- Altrimenti lo espandiamo e lo inseriamo in **EXL**
+
+> **NB**: EXL è diversa da EQL! EQL non manterrebbe l'ottimalità di UCS
+
+#### Esempio di esecuzione
+
+L'EXL evolve nel seguente modo:
+
+1. $EXL = \{\empty\}$
+
+2. $EXL = \{A\}$
+
+3. $EXL = \{A, B\}$
+
+4. $EXL = \{A, B, F\}$
+
+5. $EXL = \{A, B, F, D\}$
+
+6. $EXL = \{A, B, F, D, G\}$
+
+7. $EXL = \{A, B, F, D, G, C\}$
+
+8. $EXL = \{A, B, F, D, G, C, E\}$
+
+```mermaid
+graph TD;
+    a((0 A)) --> b((5 B)) & f((6 F))
+    b-->c(("12 C😢")) & d((8 D))
+    f-->g((11 G))
+    f-- "✂️" -->dd((9 D))
+    d-- "✂️" -->ff((11 F)) & gg((12 G))
+    g-->ddd((15 D)) & ee(("14 E🙂"))
+```
+
+## Implementazione
+
+```mermaid
+flowchart TD
+    start([Inizializzare F con nodo start]) --> if1{F è vuota?}
+    if1 -->|Si| ns([Nessuna soluzione]):::red
+    if1 -->|No| op1(Estrai da F ed espandi)
+    op1 --> if2{È in EXL?}
+    if2 -->|No| if3{È il goal?}
+    if2 -->|Si| op2(Pruning)
+    op2 --> if1
+    if3 -->|Si| g([Soluzione]):::green
+    if3 -->|No| op3(Estendi e aggiungi a EXL)
+    op3 --> op4(Aggiorna F con i nuovi nodi)
+    op4 --> if1
+    classDef red stroke:#f00
+    classDef green stroke:#0f0
+```
+
+- Il *goal check* viene effettuato quando il nodo è selezionato (non quando viene generato)
+
+- La frontiera è implementata come una lista ordinata per costo $g$ crescente
