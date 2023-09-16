@@ -50,8 +50,8 @@ Ogni volta che **UCS** seleziona per la prima volta un nodo per l'espansione, il
 **Ipotesi**:
 
 1. UCS seleziona per la prima volta dalla frontiera un nodo $V$ che è stato generato attraverso un percorso $p$; questa ipotesi vale per costruzione dell'algoritmo
-2. il percorso $p$ non è il percorso ottimo per raggiungere $V$: $p^* \neq p$
 
+2. il percorso $p$ non è il percorso ottimo per raggiungere $V$: $p^* \neq p$
 - Data la seconda ipotesi e la *separation property* della frontiera, sappiamo che deve esistere un nodo $X$ sulla frontiera, generato attraverso un cammino $p^*_1$ che si trova sul cammino ottimo $p^*$ verso $V$; quindi possiamo scrivere $p^*=p^*_1 + p^*_2$;
 
 ```mermaid
@@ -59,7 +59,7 @@ graph TD;
     a((A)) --> |p|v((V))
     a-->|p*_1|x((X)):::green
     x -.-> |p*_2|v
-    classDef green fill:#0f0
+    classDef green stroke:#0f0
 ```
 
 - $p^*$ è il path ottimo (e $p$ non lo è) quindi $g(p^*)=g(p^*_1) + \Delta_{p^*_2} < g(p)$

@@ -59,6 +59,16 @@ impl AIGraph {
 
         g
     }
+
+    pub fn get_cost_of(&self, from_vid: AIGraphVId, to_vid: AIGraphVId) -> Option<i32> {
+        if let Some(adj) = self.adjacency.get(from_vid) {
+            if let Some((_, value)) = adj.iter().find(|(vid, _)| *vid == to_vid) {
+                return Some(value.0);
+            }
+        }
+
+        None
+    }
 }
 
 #[cfg(test)]
@@ -90,5 +100,17 @@ mod tests {
     fn get_start_node() {
         let g = AIGraph::running_example();
         assert_eq!(g.get_start_node(), Some("A"));
+    }
+
+    #[test]
+    fn get_cost() {
+        let g = AIGraph::running_example();
+        assert_eq!(g.get_cost_of("A", "B"), Some(5));
+    }
+
+    #[test]
+    fn dont_get_cost() {
+        let g = AIGraph::running_example();
+        assert_eq!(g.get_cost_of("A", "Z"), None);
     }
 }
