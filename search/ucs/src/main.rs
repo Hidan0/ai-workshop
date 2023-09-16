@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 use fnv::{FnvHashMap, FnvHashSet};
-use graph::ai::{AIGraph, AIGraphVId};
+use graph::ai::{AIGraph, AIGraphVId, Solution};
 
 #[derive(Default)]
 struct Frontier {
@@ -26,21 +26,19 @@ impl Frontier {
     }
 }
 
-pub type SearchTree = FnvHashMap<(i32, AIGraphVId), (i32, AIGraphVId)>;
-
-pub trait ST {
-    fn build_path(&self, from: (i32, AIGraphVId)) -> String;
-    fn build_mermaid_graph(&self) -> String;
+#[derive(Default)]
+pub struct SearchTree {
+    pub inner: FnvHashMap<(i32, AIGraphVId), (i32, AIGraphVId)>,
 }
 
-impl ST for SearchTree {
+impl Solution<(i32, AIGraphVId)> for SearchTree {
     fn build_path(&self, from: (i32, AIGraphVId)) -> String {
         let mut path: Vec<AIGraphVId> = vec![];
 
         path.push(from.1);
         let mut current = from;
 
-        while let Some(next) = self.get(&current) {
+        while let Some(next) = self.inner.get(&current) {
             path.push(next.1);
             current = *next
         }
@@ -55,7 +53,7 @@ impl ST for SearchTree {
 
         let mut graph = String::new();
 
-        for (node, parent) in self {
+        for (node, parent) in &self.inner {
             if let Some(parent_id) = mermaid_id.get(parent) {
                 graph.push_str(format!("    {} --> ", *parent_id).as_str());
             } else {
@@ -131,7 +129,7 @@ impl<'a> UcsSolver<'a> {
 
                 let g = cost + child_cost;
 
-                self.search_tree.insert((g, e_node), (cost, node));
+                self.search_tree.inner.insert((g, e_node), (cost, node));
                 self.frontier.push(g, e_node);
             }
         }

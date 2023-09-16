@@ -1,5 +1,10 @@
 use crate::Graph;
 
+pub trait Solution<T> {
+    fn build_path(&self, from: T) -> String;
+    fn build_mermaid_graph(&self) -> String;
+}
+
 #[derive(Hash, PartialEq, Eq)]
 pub enum State {
     Start,

@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 use fnv::FnvHashMap;
-use graph::ai::{AIGraph, AIGraphVId};
+use graph::ai::{AIGraph, AIGraphVId, Solution};
 use std::collections::{HashSet, VecDeque};
 
 #[derive(Default, Debug)]
@@ -52,35 +52,19 @@ pub enum Algorithm {
     Bfs,
 }
 
-pub struct Solver<'a> {
-    graph: &'a AIGraph,
-    eql: HashSet<AIGraphVId>,
-    frontier: Box<dyn Frontier>,
-    search_tree: FnvHashMap<AIGraphVId, AIGraphVId>,
+#[derive(Default)]
+pub struct SearchTree {
+    inner: FnvHashMap<AIGraphVId, AIGraphVId>,
 }
 
-impl<'a> Solver<'a> {
-    pub fn new(graph: &'a AIGraph, algorithm: Algorithm) -> Self {
-        let frontier: Box<dyn Frontier> = match algorithm {
-            Algorithm::Dfs => Box::<DfsFrontier>::default(),
-            Algorithm::Bfs => Box::<BfsFrontier>::default(),
-        };
-
-        Self {
-            graph,
-            eql: HashSet::new(),
-            frontier,
-            search_tree: FnvHashMap::default(),
-        }
-    }
-
+impl Solution<AIGraphVId> for SearchTree {
     fn build_path(&self, from: AIGraphVId) -> String {
         let mut path: Vec<AIGraphVId> = vec![];
 
         path.push(from);
         let mut current = from;
 
-        while let Some(next) = self.search_tree.get(&current) {
+        while let Some(next) = self.inner.get(&current) {
             path.push(*next);
             current = *next
         }
@@ -89,13 +73,13 @@ impl<'a> Solver<'a> {
         path.join(" -> ")
     }
 
-    pub fn build_mermaid_graph(&self) -> String {
+    fn build_mermaid_graph(&self) -> String {
         let mut id = 0;
         let mut mermaid_id = FnvHashMap::<AIGraphVId, usize>::default();
 
         let mut graph = String::new();
 
-        for (node, parent) in &self.search_tree {
+        for (node, parent) in &self.inner {
             if let Some(parent_id) = mermaid_id.get(parent) {
                 graph.push_str(format!("    {} --> ", *parent_id).as_str());
             } else {
@@ -121,6 +105,29 @@ graph TD;
             graph
         )
     }
+}
+
+pub struct Solver<'a> {
+    graph: &'a AIGraph,
+    eql: HashSet<AIGraphVId>,
+    frontier: Box<dyn Frontier>,
+    search_tree: SearchTree,
+}
+
+impl<'a> Solver<'a> {
+    pub fn new(graph: &'a AIGraph, algorithm: Algorithm) -> Self {
+        let frontier: Box<dyn Frontier> = match algorithm {
+            Algorithm::Dfs => Box::<DfsFrontier>::default(),
+            Algorithm::Bfs => Box::<BfsFrontier>::default(),
+        };
+
+        Self {
+            graph,
+            eql: HashSet::new(),
+            frontier,
+            search_tree: SearchTree::default(),
+        }
+    }
 
     pub fn solve(&mut self) -> Result<String> {
         let start_node = match self.graph.get_start_node() {
@@ -135,7 +142,7 @@ graph TD;
 
         while let Some(node) = self.frontier.pop() {
             if self.graph.is_goal(node) {
-                return Ok(self.build_path(node));
+                return Ok(self.search_tree.build_path(node));
             }
 
             let mut expanded_nodes = self.graph.expand(node);
@@ -149,7 +156,7 @@ graph TD;
             while let Some(e_node) = expanded_nodes.pop() {
                 self.eql.insert(e_node);
 
-                self.search_tree.insert(e_node, node);
+                self.search_tree.inner.insert(e_node, node);
 
                 self.frontier.push(e_node);
             }
