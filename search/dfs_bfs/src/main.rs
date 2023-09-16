@@ -1,11 +1,17 @@
 use anyhow::{bail, Result};
 use fnv::FnvHashMap;
-use graph::ai::{AIGraph, AIGraphVId, Frontier};
+use graph::ai::{AIGraph, AIGraphVId};
 use std::collections::{HashSet, VecDeque};
 
 #[derive(Default, Debug)]
 struct DfsFrontier {
     f: VecDeque<AIGraphVId>,
+}
+
+trait Frontier {
+    fn is_empty(&self) -> bool;
+    fn pop(&mut self) -> Option<AIGraphVId>;
+    fn push(&mut self, node: AIGraphVId);
 }
 
 impl Frontier for DfsFrontier {
