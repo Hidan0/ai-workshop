@@ -5,3 +5,4 @@
 - Search
   - DFS e BFS
   - UCS
+  - A\*
